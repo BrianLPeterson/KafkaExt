@@ -37,12 +37,23 @@ namespace CustomLAExtension.Providers
 
             this.apiOperationsList.AddRange(new InsensitiveDictionary<ServiceOperation>
             {
-                { "HelloWorld", WriteMessageApiOperationManifest.Operation },
+                { "WriteMessage", WriteMessageApiOperationManifest.Operation },
+            });
+
+            this.apiOperationsList.AddRange(new InsensitiveDictionary<ServiceOperation>
+            {
+                { "ConsumeMessage", ConsumeMessageApiOperationManifest.Operation },
             });
 
             this.serviceOperationsList.AddRange(new List<ServiceOperation>
             {
-                {  WriteMessageApiOperationManifest.Operation.CloneWithManifest(WriteMessageApiOperationManifest.OperationManifest) }
+                {  
+                    WriteMessageApiOperationManifest.Operation.CloneWithManifest(WriteMessageApiOperationManifest.OperationManifest)
+                },
+                {
+                    ConsumeMessageApiOperationManifest.Operation.CloneWithManifest(ConsumeMessageApiOperationManifest.OperationManifest)
+                }
+
             });
         }
         
@@ -70,32 +81,61 @@ namespace CustomLAExtension.Providers
 
         Task<ServiceOperationResponse> IServiceOperationsProvider.InvokeOperation(string operationId, InsensitiveDictionary<JToken> connectionParameters, ServiceOperationRequest serviceOperationRequest)
         {
-            
-            //Read the connectionString from the app.settings file and split key pair values
             var connString = ServiceOperationsProviderUtilities.GetParameterValue("ConnectionString", connectionParameters).ToValue<string>()
-                .Split(";")
-                .Select(s=> s.Split('='))
-                .ToDictionary(s=>s.First(), s=>s.Last());
+                    .Split(";")
+                    .Select(s => s.Split('='))
+                    .ToDictionary(s => s.First(), s => s.Last());
 
-            //create a producer config
-            var config = new ProducerConfig
+            if (operationId == "WriteMessage")
             {
-                BootstrapServers = connString["BootstrapServers"],
-                ClientId = Dns.GetHostName(),
-                SecurityProtocol = SecurityProtocol.SaslSsl,
-                SaslMechanism = SaslMechanism.Plain,
-                SaslUsername = connString["SaslUsername"],
-                SaslPassword = connString["SaslPassword"]
-            };
+                //Read the connectionString from the app.settings file and split key pair values
+                
+                //create a producer config
+                var config = new ProducerConfig
+                {
+                    BootstrapServers = connString["BootstrapServers"],
+                    ClientId = Dns.GetHostName(),
+                    SecurityProtocol = SecurityProtocol.SaslSsl,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = connString["SaslUsername"],
+                    SaslPassword = connString["SaslPassword"]
+                };
 
 
-            using (var producer = new ProducerBuilder<Null, string>(config).Build())
-            {
-                var t = producer.ProduceAsync(serviceOperationRequest.Parameters["topic"].ToString() , new Message<Null, string>() { Value= serviceOperationRequest.Parameters["content"].ToString()} );               
-                producer.Flush();
+                using (var producer = new ProducerBuilder<Null, string>(config).Build())
+                {
+                    var t = producer.ProduceAsync(serviceOperationRequest.Parameters["topic"].ToString(), new Message<Null, string>() { Value = serviceOperationRequest.Parameters["content"].ToString() });
+                    producer.Flush();
+                }
+                return Task.FromResult((ServiceOperationResponse)new KafkaExtResponse(JObject.FromObject(new { Status = "Successfully posted" }), System.Net.HttpStatusCode.Created));
             }
-            return Task.FromResult((ServiceOperationResponse)new KafkaExtResponse(JObject.FromObject(new { Status = "Successfully posted" }), System.Net.HttpStatusCode.Created));
+            else
+            {
+                var config = new ConsumerConfig
+                {
+                    BootstrapServers = connString["BootstrapServers"],
+                    GroupId = connString["GroupId"] ?? "poo",
+                    SecurityProtocol = SecurityProtocol.SaslSsl,
+                    SaslMechanism = SaslMechanism.Plain,
+                    SaslUsername = connString["SaslUsername"],
+                    SaslPassword = connString["SaslPassword"],
+                    AutoOffsetReset = AutoOffsetReset.Latest
+                };
 
+                using (var consumer = new ConsumerBuilder<Ignore, string>(config).Build())
+                {
+                    consumer.Subscribe(serviceOperationRequest.Parameters["topic"].ToString());                    
+                    int cancellationToken = serviceOperationRequest.Parameters["timeout"].ToValue<int>();
+                    var consumeResult = consumer.Consume(cancellationToken);
+                    consumer.Close();
+                    if(consumeResult != null)
+                        return Task.FromResult((ServiceOperationResponse)new KafkaExtResponse(JObject.FromObject(new { body = consumeResult.Message.Value.ToString() ?? "" }), System.Net.HttpStatusCode.Created));
+                    else 
+                        return Task.FromResult((ServiceOperationResponse)new KafkaExtResponse(JObject.FromObject(new { body = ""}), System.Net.HttpStatusCode.Created));
+
+                }                
+            }
+        
         } 
 
         private IEnumerable<ServiceOperation> GetApiOperations()
@@ -103,5 +143,6 @@ namespace CustomLAExtension.Providers
             return this.apiOperationsList.Values;
         }
 
+       
     }
 }
