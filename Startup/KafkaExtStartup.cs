@@ -15,7 +15,8 @@ namespace CustomLAExtension.Startup
         public void Configure(IWebJobsBuilder builder)
         {
             builder.AddExtension<KafkaExtServiceProvider>();
-            builder.Services.TryAddSingleton<KafkaExtServiceOperationProvider>();
+            builder.Services.TryAddSingleton<KafkaExtServiceOperationProvider>();            
         }
     }
 }
+

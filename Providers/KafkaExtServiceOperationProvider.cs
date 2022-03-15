@@ -141,8 +141,6 @@ namespace CustomLAExtension.Providers
         private IEnumerable<ServiceOperation> GetApiOperations()
         {
             return this.apiOperationsList.Values;
-        }
-
-       
+        } 
     }
 }

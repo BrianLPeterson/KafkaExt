@@ -94,8 +94,8 @@ namespace CustomLAExtension.Providers
             Properties = new ServiceOperationProperties()
             {
                 Api = KafkaExtApiOperationsDataProvider.GetServiceOperationApi().GetFlattenedApi(),
-                Summary = "Consume a Message to a Kafka Topic",
-                Description = "Consume a Message to a Kafka Topic",
+                Summary = "Consume a Message from a Kafka Topic",
+                Description = "Consume a Message from a Kafka Topic",
                 Visibility = Visibility.Important,
                 OperationType = OperationType.ServiceProvider,
                 BrandColor = KafkaExtApiOperationsDataProvider.GetServiceOperationApi().Properties.BrandColor,
