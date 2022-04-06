@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>CustomLAExtension.snk</AssemblyOriginatorKeyFile>
-    <AssemblyName>CustomLAExtension.KafkaExt</AssemblyName>
+    <AssemblyName>CustomLAExtension.IcM</AssemblyName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
