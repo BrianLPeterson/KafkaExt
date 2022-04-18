@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.6.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.3.0" />
     <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
     <PackageReference Include="Microsoft.Azure.Workflows.WebJobs.Extension" Version="1.1.9" />
   </ItemGroup>

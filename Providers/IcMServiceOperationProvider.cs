@@ -1,4 +1,5 @@
-﻿using Confluent.Kafka;
+﻿using Azure.Identity;
+using Confluent.Kafka;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Workflows.ServiceProviders.Abstractions;
 using Microsoft.Azure.Workflows.ServiceProviders.WebJobs.Abstractions.Providers;
@@ -76,7 +77,11 @@ namespace CustomLAExtension.Providers
 
             if (operationId == "GetIncident")
             {
-                return Task.FromResult((ServiceOperationResponse)new IcMResponse(JObject.FromObject(new { Status = $"{secretId} success" }), System.Net.HttpStatusCode.OK));
+                Azure.Security.KeyVault.Certificates.CertificateClient client = new Azure.Security.KeyVault.Certificates.CertificateClient(new Uri("https://workflowsecrets-test.vault.azure.net"), new DefaultAzureCredential());
+
+                var cert = client.GetCertificate("secretId");
+
+                return Task.FromResult((ServiceOperationResponse)new IcMResponse(JObject.FromObject(new { Status = $"{secretId} success {cert.Value.Name}" }), System.Net.HttpStatusCode.OK));
             }
             else
             {
